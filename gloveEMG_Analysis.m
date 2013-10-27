@@ -40,69 +40,99 @@ neg_pks_middle = -1*neg_pks_middle;
 [new_neg_locs_middle, new_neg_pks_middle] = peaksInTheRegion(neg_locs_middle, neg_pks_middle, mid_end);
 
 
-%% statistical values 
-% mean values
-index_mean= mean(indexData(ind_start:ind_end))
-middle_mean= mean(middleData(mid_start:mid_end))
-
-% making a peak-to-peak value array 
-% same index to same index
-line = 1;
-for i=1:length(new_locs_index)
-    p2p_index_array(line) = abs(new_pks_index(i) - new_neg_pks_index(i));
-    line = line + 1;
-    if i ~= length(new_locs_index) 
-        p2p_index_array(line) = abs(new_pks_index(i) - new_neg_pks_index(i+1));
-        line = line + 1; 
-    else
-        break
-    end
-end
-
-line = 1;
-for i=1:length(new_locs_middle)
-    p2p_middle_array(line) = abs(new_pks_middle(i) - new_neg_pks_middle(i));
-    line = line + 1;
-    if i ~= length(new_locs_middle) 
-        p2p_middle_array(line) = abs(new_pks_middle(i) - new_neg_pks_middle(i+1));
-        line = line + 1; 
-    else
-        break
-    end
-end
-
-
-mean(p2p_index_array)
-mean(p2p_middle_array)
-
 
 
 %% plotting
 
+loopOn = 1;
 
-subplot(2,1,1)
-plot(time, indexData, time(new_locs_index), new_pks_index, 'rv',  time(new_neg_locs_index), new_neg_pks_index, 'rv'); grid on
-legend('index finger');
-hold on
-x=[x_marker(1),x_marker(1)];
-y=[-2, 0];
-plot(x,y, 'r', 'LineWidth',2.0);
-hold on
-x=[x_marker(2),x_marker(2)];
-y=[-2, 0];
-plot(x,y, 'r', 'LineWidth',2.0);
-set(gca,'ylim',[-2 0.5]);
+while (loopOn)
+    %% statistical values 
+    % mean values
+    index_mean= mean(indexData(ind_start:ind_end))
+    middle_mean= mean(middleData(mid_start:mid_end))
 
-subplot(2,1,2)
-plot(time, middleData, time(new_locs_middle), new_pks_middle, 'rv',  time(new_neg_locs_middle), new_neg_pks_middle, 'rv'); grid on
-legend('middle finger');
-hold on
-x=[x_marker(3),x_marker(3)];
-y=[-2, 0];
-plot(x,y, 'r', 'LineWidth',2.0)
-hold on
-x=[x_marker(4),x_marker(4)];
-y=[-2, 0];
-plot(x,y, 'r', 'LineWidth',2.0)
-set(gca,'ylim',[-2 0.5]);
-title( sprintf( 'mean index AMP: %f, VAR: %f, middle AMP: %f, var: %f', mean(p2p_index_array), var(p2p_index_array), mean(p2p_middle_array), var(p2p_middle_array) ));
+    % making a peak-to-peak value array 
+    % same index to same index
+    line = 1;
+    for i=1:length(new_pks_index)
+        p2p_index_array(line) = abs(new_pks_index(i) - new_neg_pks_index(i));
+        line = line + 1;
+        if i ~= length(new_pks_index) 
+            p2p_index_array(line) = abs(new_pks_index(i) - new_neg_pks_index(i+1));
+            line = line + 1; 
+        else
+            break
+        end
+    end
+
+    line = 1;
+    for i=1:length(new_pks_middle)
+        p2p_middle_array(line) = abs(new_pks_middle(i) - new_neg_pks_middle(i));
+        line = line + 1;
+        if i ~= length(new_pks_middle) 
+            p2p_middle_array(line) = abs(new_pks_middle(i) - new_neg_pks_middle(i+1));
+            line = line + 1; 
+        else
+            break
+        end
+    end
+
+
+    mean(p2p_index_array)
+    mean(p2p_middle_array)
+    
+    clf;
+    plotting( p2p_index_array, p2p_middle_array, time,indexData, new_locs_index, new_pks_index, new_neg_locs_index, new_neg_pks_index, x_marker, middleData,new_locs_middle, new_pks_middle, new_neg_locs_middle, new_neg_pks_middle )
+
+    prompt = 'Are you satisfied with the peaks?  1 = yes .../ 2 = change index  / 3 = change middle:  ';
+    result = input(prompt)
+    switch result
+        case 1
+            [pathstr,oldBaseName,ext] = fileparts(fname) 
+            newName = sprintf('%s_p2p_array.mat',oldBaseName);
+            newFullFuleName = fullfile(currentFolder, newName);
+            save(newFullFuleName,'-mat', 'p2p_index_array','p2p_middle_array'); 
+            loopOn = 0;
+        case 2
+            transpose(new_pks_index)
+            prompt = 'pks_index: choose a index of wrong peak to remove, 99 if pass : ';
+            ind_to_remove = input(prompt)
+            if ind_to_remove ~= 99
+                new_pks_index(ind_to_remove) = []; 
+                new_locs_index(ind_to_remove) = []; 
+            else 
+                transpose(new_neg_pks_index)
+                prompt = 'neg_pks_index: choose a index of wrong peak to remove, 99 if pass : ';
+                ind_to_remove = input(prompt)
+                if ind_to_remove ~= 99
+                     new_neg_pks_index(ind_to_remove) = []; 
+                     new_neg_locs_index(ind_to_remove) = []; 
+                    
+                end
+            end
+        case 3
+           transpose(new_pks_middle)
+            prompt = 'pks_middle: choose a index of wrong peak to remove, 99 if pass : ';
+            ind_to_remove = input(prompt)
+            if ind_to_remove ~= 99
+                new_pks_middle(ind_to_remove) = []; 
+                new_locs_middle(ind_to_remove) = []; 
+            else 
+                transpose(new_neg_pks_middle)
+                prompt = 'neg_pks_middle: choose a index of wrong peak to remove, 99 if pass : ';
+                ind_to_remove = input(prompt)
+                if ind_to_remove ~= 99
+                     new_neg_pks_middle(ind_to_remove) = []; 
+                     new_neg_locs_middle(ind_to_remove) = []; 
+                    
+                end
+            end
+        otherwise
+            disp('Wrong choice');
+            
+    end
+    
+end
+
+

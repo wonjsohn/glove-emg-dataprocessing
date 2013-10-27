@@ -18,27 +18,38 @@ time=HeaderLines(:,1);
 indexData=HeaderLines(:,2);
 middleData=HeaderLines(:,3);
 
-% get index of start / end of each graph for stat analysis
-ind_start = find(time >= x_marker(1), 1, 'first');  % return first 1 index 
-ind_end = find(time >= x_marker(2), 1, 'first');  % return first 1 index 
+prompt = 'Do you like to use previously tailored peak arrays?  1: yes, 0: no  ?';
+dontsave = input(prompt)
+if (dontsave)    
+    peak_array_fname = uigetfile('*.mat','Select the MATLAB code file');
+    load(peak_array_fname);
+else
+    % get index of start / end of each graph for stat analysis
+    ind_start = find(time >= x_marker(1), 1, 'first');  % return first 1 index 
+    ind_end = find(time >= x_marker(2), 1, 'first');  % return first 1 index 
 
-mid_start = find(time >= x_marker(3), 1, 'first');  % return first 1 index 
-mid_end = find(time >= x_marker(4), 1, 'first');  % return first 1 index 
+    mid_start = find(time >= x_marker(3), 1, 'first');  % return first 1 index 
+    mid_end = find(time >= x_marker(4), 1, 'first');  % return first 1 index 
 
-% find peaks
-[pks_index,locs_index] = findpeaks(indexData);
-[pks_middle,locs_middle] = findpeaks(middleData);
-[neg_pks_index,neg_locs_index] = findpeaks(-1*indexData);
-[neg_pks_middle,neg_locs_middle] = findpeaks(-1*middleData);
-neg_pks_index = -1* neg_pks_index;
-neg_pks_middle = -1*neg_pks_middle;
+    % find peaks
+    [pks_index,locs_index] = findpeaks(indexData);
+    [pks_middle,locs_middle] = findpeaks(middleData);
+    [neg_pks_index,neg_locs_index] = findpeaks(-1*indexData);
+    [neg_pks_middle,neg_locs_middle] = findpeaks(-1*middleData);
+    neg_pks_index = -1* neg_pks_index;
+    neg_pks_middle = -1*neg_pks_middle;
 
-% remove peaks outside of range between x_markers
-[new_locs_index, new_pks_index] = peaksInTheRegion(locs_index, pks_index, ind_end);
-[new_locs_middle, new_pks_middle] = peaksInTheRegion(locs_middle, pks_middle, mid_end);
-[new_neg_locs_index, new_neg_pks_index] = peaksInTheRegion(neg_locs_index, neg_pks_index, ind_end);
-[new_neg_locs_middle, new_neg_pks_middle] = peaksInTheRegion(neg_locs_middle, neg_pks_middle, mid_end);
+    % remove peaks outside of range between x_markers
+    [new_locs_index, new_pks_index] = peaksInTheRegion(locs_index, pks_index, ind_end);
+    [new_locs_middle, new_pks_middle] = peaksInTheRegion(locs_middle, pks_middle, mid_end);
+    [new_neg_locs_index, new_neg_pks_index] = peaksInTheRegion(neg_locs_index, neg_pks_index, ind_end);
+    [new_neg_locs_middle, new_neg_pks_middle] = peaksInTheRegion(neg_locs_middle, neg_pks_middle, mid_end);
+       
+    % mean values
+    index_mean= mean(indexData(ind_start:ind_end))
+    middle_mean= mean(middleData(mid_start:mid_end))
 
+end
 
 
 
@@ -47,11 +58,8 @@ neg_pks_middle = -1*neg_pks_middle;
 loopOn = 1;
 
 while (loopOn)
-    %% statistical values 
-    % mean values
-    index_mean= mean(indexData(ind_start:ind_end))
-    middle_mean= mean(middleData(mid_start:mid_end))
 
+    %% statistical values 
     % making a peak-to-peak value array 
     % same index to same index
     line = 1;
@@ -84,7 +92,10 @@ while (loopOn)
     
     clf;
     plotting( p2p_index_array, p2p_middle_array, time,indexData, new_locs_index, new_pks_index, new_neg_locs_index, new_neg_pks_index, x_marker, middleData,new_locs_middle, new_pks_middle, new_neg_locs_middle, new_neg_pks_middle )
-
+    
+    if (dontsave) % prevent accidently saving to a tailored peak array. 
+        break;
+    end
     prompt = 'Are you satisfied with the peaks?  1 = yes .../ 2 = change index  / 3 = change middle:  ';
     result = input(prompt)
     switch result
@@ -92,7 +103,7 @@ while (loopOn)
             [pathstr,oldBaseName,ext] = fileparts(fname) 
             newName = sprintf('%s_p2p_array.mat',oldBaseName);
             newFullFuleName = fullfile(currentFolder, newName);
-            save(newFullFuleName,'-mat', 'p2p_index_array','p2p_middle_array'); 
+            save(newFullFuleName,'-mat', 'new_pks_index', 'new_locs_index', 'new_neg_pks_index', 'new_neg_locs_index', 'new_pks_middle', 'new_locs_middle', 'new_neg_pks_middle', 'new_neg_locs_middle',    'p2p_index_array','p2p_middle_array'); 
             loopOn = 0;
         case 2
             transpose(new_pks_index)
